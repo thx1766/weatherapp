@@ -9,9 +9,19 @@ import SwiftUI
 
 struct weatherInfo {
     var dayOfWeek: String
-    var sfsymbol: String
+    var sfsymbol: weatherType
     var temperature_max: Int
     var temperature_min: Int
+}
+
+enum weatherType : String {
+    case cloudy = "cloud.sun.fill"
+    case sunny = "sun.max.fill"
+    case windy = "wind"
+    case snowy = "snow"
+    case starry = "star"
+    case rainlight = "cloud.rain"
+    case rainheavy = "cloud.heavyrain"
 }
 
 struct ContentView: View {
@@ -20,25 +30,27 @@ struct ContentView: View {
     init(){
         var weatherInput: [weatherInfo] = []
         
-        weatherInput.append(weatherInfo(dayOfWeek: "TUE", sfsymbol: "cloud.sun.fill", temperature_max: 74, temperature_min: 74))
-        weatherInput.append(weatherInfo(dayOfWeek: "WED", sfsymbol: "sun.max.fill", temperature_max: 74, temperature_min: 74))
-        weatherInput.append(weatherInfo(dayOfWeek: "THU", sfsymbol: "wind", temperature_max: 74, temperature_min: 74))
-        weatherInput.append(weatherInfo(dayOfWeek: "FRI", sfsymbol: "sunset.fill", temperature_max: 74, temperature_min: 74))
-        weatherInput.append(weatherInfo(dayOfWeek: "SAT", sfsymbol: "snow", temperature_max: 74, temperature_min: 74))
+        weatherInput.append(weatherInfo(dayOfWeek: "TUE", sfsymbol: weatherType.cloudy, temperature_max: 74, temperature_min: 74))
+        weatherInput.append(weatherInfo(dayOfWeek: "WED", sfsymbol: weatherType.sunny, temperature_max: 74, temperature_min: 74))
+        weatherInput.append(weatherInfo(dayOfWeek: "THU", sfsymbol: weatherType.windy, temperature_max: 74, temperature_min: 74))
+        weatherInput.append(weatherInfo(dayOfWeek: "FRI", sfsymbol: weatherType.sunny, temperature_max: 74, temperature_min: 74))
+        weatherInput.append(weatherInfo(dayOfWeek: "SAT", sfsymbol: weatherType.snowy, temperature_max: 74, temperature_min: 74))
 
         self.weatherArray = weatherInput
+        self.viewWeatherLocation = weatherLocation.tifton
     }
     
     @State private var isNight = false
     var weatherArray: [weatherInfo]
+    @State var viewWeatherLocation: weatherLocation
     
     var body: some View {
         ZStack {
             BackgroundView(isNight: $isNight)
             VStack{
-                CityTextView(cityName: "Cupertino, CA")
+                CityTextView(cityName: viewWeatherLocation.info.name)
                 
-                MainWeatherStatusView(imageName: isNight ? "moon.stars.fill" : "cloud.sun.fill", temperature: 76)
+                MainWeatherStatusView(imageName: isNight ? "moon.stars.fill" : "cloud.sun.fill", temperature: (network.currentDayWeather.temperature_max - (network.currentDayWeather.temperature_max - network.currentDayWeather.temperature_min)/2))
 
                 HStack(spacing: 20){
                     // array with a struct for day of week, enums for weather
@@ -64,10 +76,42 @@ struct ContentView: View {
                     WeatherButton(title: "Change Day Time", textColor: .blue, backgroundColor: .white)
                 }
                 Spacer()
+                HStack{
+                    Button{
+                        viewWeatherLocation = weatherLocation.mountHolly
+                        network.getWeather(weatherLocationRequest: viewWeatherLocation)
+                    }label:{
+                        Text(weatherLocation.mountHolly.info.name)
+                    }
+                    Button{
+                        viewWeatherLocation = weatherLocation.ithaca
+                        network.getWeather(weatherLocationRequest: viewWeatherLocation)
+                    }label:{
+                        Text(weatherLocation.ithaca.info.name)
+                    }
+                    Button{
+                        viewWeatherLocation = weatherLocation.tifton
+                        network.getWeather(weatherLocationRequest: viewWeatherLocation)
+                    }label:{
+                        Text(weatherLocation.tifton.info.name)
+                    }
+                    Button{
+                        viewWeatherLocation = weatherLocation.warnerRobins
+                        network.getWeather(weatherLocationRequest: viewWeatherLocation)
+                    }label:{
+                        Text(weatherLocation.warnerRobins.info.name)
+                    }
+                    Button{
+                        viewWeatherLocation = weatherLocation.bridgeton
+                        network.getWeather(weatherLocationRequest: viewWeatherLocation)
+                    }label:{
+                        Text(weatherLocation.bridgeton.info.name)
+                    }
+                }
             }
             
         }.onAppear{
-            network.getWeather()
+            network.getWeather(weatherLocationRequest: viewWeatherLocation)
             print("got weather")
             print(network.weather.self)
             print("weatherElement:\n\(network.weatherArray.self)")
@@ -93,6 +137,7 @@ struct WeatherDayView: View {
             Text(weatherInfoItem.dayOfWeek)
                 .font(.system(size: 28))
                 .foregroundColor(.white)
+            Image(systemName: weatherInfoItem.sfsymbol.rawValue)
 //            Image(systemName: weatherInfoItem.sfsymbol)
 //                .renderingMode(.original)
 //                .resizable()
